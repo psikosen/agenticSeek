@@ -75,3 +75,9 @@ class executorResult:
         pretty_print('▂'*64, color="status")
         pretty_print(self.feedback, color="success" if self.success else "failure")
         pretty_print('▂'*64, color="status")
+
+class ModelNameResponse(BaseModel):
+    model_name: str
+
+class SetModelRequest(BaseModel):
+    model_name: str

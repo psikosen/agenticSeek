@@ -14,15 +14,47 @@ function App() {
     const [isOnline, setIsOnline] = useState(false);
     const [status, setStatus] = useState('Agents ready');
     const messagesEndRef = useRef(null);
+    const [currentModel, setCurrentModel] = useState('');
+    const [newModelInput, setNewModelInput] = useState('');
 
     useEffect(() => {
+        fetchCurrentModel(); // Fetch model on initial load
         const intervalId = setInterval(() => {
             checkHealth();
             fetchLatestAnswer();
             fetchScreenshot();
         }, 3000);
         return () => clearInterval(intervalId);
-    }, [messages]);
+    }, [messages]); // currentModel removed from dependencies to avoid loop, fetchCurrentModel is called once
+
+    const fetchCurrentModel = async () => {
+        try {
+            const res = await axios.get('http://127.0.0.1:8000/model');
+            if (res.data && res.data.model_name) {
+                setCurrentModel(res.data.model_name);
+                setNewModelInput(res.data.model_name); // Initialize input with current model
+            }
+        } catch (err) {
+            console.error('Error fetching current model:', err);
+            // Optionally set an error state here
+        }
+    };
+
+    const handleUpdateModel = async () => {
+        if (!newModelInput.trim()) {
+            alert('Please enter a model name.');
+            return;
+        }
+        try {
+            await axios.post('http://127.0.0.1:8000/model', { model_name: newModelInput });
+            setCurrentModel(newModelInput);
+            alert('Model updated successfully!');
+        } catch (err) {
+            console.error('Error updating model:', err);
+            alert('Failed to update model.');
+            // Optionally set an error state here
+        }
+    };
 
     const checkHealth = async () => {
         try {
@@ -183,6 +215,16 @@ function App() {
         <div className="app">
             <header className="header">
                 <h1>AgenticSeek</h1>
+                <div className="model-config-section">
+                    <input
+                        type="text"
+                        value={newModelInput}
+                        onChange={(e) => setNewModelInput(e.target.value)}
+                        placeholder="Enter Ollama model name"
+                    />
+                    <button onClick={handleUpdateModel}>Update Model</button>
+                    {currentModel && <p className="current-model-display">Current Model: {currentModel}</p>}
+                </div>
             </header>
             <main className="main">
                 <div className="app-sections">

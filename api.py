@@ -20,7 +20,7 @@ from sources.agents import CasualAgent, CoderAgent, FileAgent, PlannerAgent, Bro
 from sources.browser import Browser, create_driver
 from sources.utility import pretty_print
 from sources.logger import Logger
-from sources.schemas import QueryRequest, QueryResponse
+from sources.schemas import QueryRequest, QueryResponse, ModelNameResponse, SetModelRequest
 
 
 from celery import Celery
@@ -30,11 +30,12 @@ celery_app = Celery("tasks", broker="redis://localhost:6379/0", backend="redis:/
 celery_app.conf.update(task_track_started=True)
 logger = Logger("backend.log")
 config = configparser.ConfigParser()
-config.read('config.ini')
+CONFIG_FILE = 'config.ini' # Define config file path
+config.read(CONFIG_FILE)
 
 api.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost", "http://localhost:3000"],
+    allow_origins=["http://localhost", "http://localhost:3000"], # Frontend
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -245,6 +246,38 @@ async def process_query(request: QueryRequest):
         logger.info("Processing finished")
         if config.getboolean('MAIN', 'save_session'):
             interaction.save_session()
+
+@api.get("/model", response_model=ModelNameResponse)
+async def get_model_name():
+    """
+    Returns the current model name being used by the Provider.
+    """
+    logger.info("GET /model endpoint called")
+    current_model = interaction.provider.get_model_name()
+    return ModelNameResponse(model_name=current_model)
+
+@api.post("/model")
+async def set_model_name(request: SetModelRequest):
+    """
+    Sets the model name for the Provider and updates config.ini.
+    """
+    logger.info(f"POST /model endpoint called with model: {request.model_name}")
+    try:
+        # Update the model in the provider
+        interaction.provider.set_model(request.model_name)
+
+        # Update config.ini
+        if 'MAIN' not in config:
+            config.add_section('MAIN')
+        config.set('MAIN', 'provider_model', request.model_name)
+        with open(CONFIG_FILE, 'w') as configfile:
+            config.write(configfile)
+
+        logger.info(f"Model updated to {request.model_name} and saved to {CONFIG_FILE}")
+        return JSONResponse(status_code=200, content={"message": f"Model updated to {request.model_name}"})
+    except Exception as e:
+        logger.error(f"Error setting model name: {str(e)}")
+        return JSONResponse(status_code=500, content={"error": f"Failed to set model name: {str(e)}"})
 
 if __name__ == "__main__":
     uvicorn.run(api, host="0.0.0.0", port=8000)

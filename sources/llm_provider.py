@@ -49,6 +49,49 @@ class Provider:
     def get_model_name(self) -> str:
         return self.model
 
+    def _update_model_on_server(self):
+        """Helper method to send the current self.model to the llm_server."""
+        # This method is called when self.provider_name == "server" and self.is_local
+        # It means api.py is trying to communicate a model change to the llm_server/app.py
+        if not self.server_address:
+            self.logger.error("Server address is not configured for _update_model_on_server.")
+            return
+
+        # Ensure the server_address has a scheme
+        if not self.server_address.startswith(('http://', 'https://')):
+            addr_to_use = f"http://{self.server_address}"
+        else:
+            addr_to_use = self.server_address
+
+        route_setup = f"{addr_to_use}/setup"
+
+        try:
+            self.logger.info(f"Attempting to update model to '{self.model}' on llm_server at {route_setup}")
+            response = requests.post(route_setup, json={"model": self.model})
+                response.raise_for_status()  # Raise an exception for HTTP errors
+                self.logger.info(f"Model updated on llm_server: {self.model}")
+            except requests.exceptions.RequestException as e:
+                self.logger.error(f"Failed to update model on llm_server: {e}")
+                # Optionally, re-raise or handle as appropriate for your application's error handling
+                # For now, just log the error.
+            except Exception as e:
+                self.logger.error(f"An unexpected error occurred while updating model on llm_server: {e}")
+
+
+    def set_model(self, model_name: str):
+        """Sets the model name and updates it on the server if applicable."""
+        if not isinstance(model_name, str) or not model_name.strip():
+            self.logger.error("Invalid model name provided.")
+            return
+        self.model = model_name
+        self.logger.info(f"Provider model set to: {self.model}")
+
+        # If provider is running locally (i.e., we are communicating with the llm_server process),
+        # we need to tell it to update its model.
+        if self.is_local:
+            self._update_model_on_server()
+
+
     def get_api_key(self, provider):
         load_dotenv()
         api_key_var = f"{provider.upper()}_API_KEY"

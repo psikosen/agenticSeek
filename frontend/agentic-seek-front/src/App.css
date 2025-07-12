@@ -481,3 +481,53 @@ body {
     padding-bottom: 6px;
   }
 }
+
+.model-config-section {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 10px; /* Reduced padding */
+  background-color: #1e293b; /* darkCard, same as header */
+  border-radius: 8px;
+  margin-left: 20px; /* Add some margin to separate from title */
+}
+
+.model-config-section input[type="text"] {
+  padding: 8px 12px; /* Consistent padding */
+  font-size: 0.9rem; /* Slightly smaller font */
+  background-color: #2d3748; /* Slightly lighter than darkCard */
+  border: 1px solid #4a5568; /* Medium gray */
+  color: #f8fafc; /* darkText */
+  border-radius: 6px; /* Slightly smaller radius */
+  outline: none;
+  transition: all 0.2s ease;
+  width: 200px; /* Fixed width or max-width as needed */
+}
+
+.model-config-section input[type="text"]:focus {
+  border-color: #0066cc; /* primary */
+  box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.2); /* primary with opacity */
+}
+
+.model-config-section button {
+  padding: 8px 15px; /* Consistent padding */
+  font-size: 0.9rem; /* Slightly smaller font */
+  background-color: #0066cc; /* primary */
+  color: #ffffff; /* white */
+  border: none;
+  border-radius: 6px; /* Slightly smaller radius */
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.model-config-section button:hover {
+  background-color: #004c99; /* primaryDark */
+}
+
+.current-model-display {
+  margin: 0 0 0 10px; /* Add some left margin */
+  font-size: 0.9rem;
+  color: #cbd5e1; /* darkTextSecondary */
+  white-space: nowrap; /* Prevent wrapping */
+}
